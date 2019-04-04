@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Fri Mar 22 14:58:06 2019
+Created on Fri Mar 23 14:58:06 2019
 
 @author: aliheydari
 """
@@ -9,7 +9,7 @@ from __future__ import print_function, division
 import os
 import torch
 import pandas as pd
-from skimage import io, transform
+#from skimage import io, transform
 import numpy as np
 import matplotlib.pyplot as plt
 from torch.utils.data import Dataset, DataLoader
@@ -35,7 +35,10 @@ class Net(nn.Module):
         # OR 19163 [inp] -> [however many hidden neurons you have]
         self.fc1 = nn.Linear(input_size, hidden_size) 
         # for the fuck of it, let's pick ReLU
-        self.relu = nn.ReLU()                          
+        self.relu = nn.ReLU()                     
+        # and if we need softmax
+        self.softmax = nn.Softmax()
+        
         # second full-connected layer: 100  [Hid Node] -> 2 [Binary Outp]
         self.fc2 = nn.Linear(hidden_size, num_classes) 
         
@@ -66,8 +69,10 @@ class Net(nn.Module):
 # read the data
 train_data = open("train_matrix.tsv", "r+");
 test_data = open("test_matrix.tsv", "r+");
+
 resp_data = open("train_response.tsv", "r+");
 test_resp_data = open("test_response.tsv", "r+");
+
 
 # init the NUMPY arrays (later need tensors)
 train = [];
@@ -110,12 +115,12 @@ hidden_size = 100
 num_classes = 2       
 
 # an epoch is "the number of times entire dataset is trained"
-num_epochs = 5
+num_epochs = 50
 # the chuck of the input data we took for one iter
 batch_size = 100    
 
 # self adjusting alpha for the SGD or ADAM towards the end
-learning_rate = 0.001
+learning_rate = 0.1
 
 ## ^^ this is something neat to fuck around with ^^ ##
 
@@ -151,16 +156,20 @@ test_loader = torch.utils.data.DataLoader(dataset=test_dataset,
                                           shuffle=False);
 # init NN
 net = Net(input_size, hidden_size, num_classes);
+
 # loss function
+#criterion = nn.NLLLoss()
+## cross entropy combines this ^^ and logSoftmax AND it works better
 criterion = nn.CrossEntropyLoss()
 
-optimizer = torch.optim.Adam(net.parameters(), lr=learning_rate)
+optimizer = torch.optim.SGD(net.parameters(), lr=learning_rate)
 
 # just for the fuck of it let's try it with SGD
 #optimizer = torch.optim.SGD(net.parameters(), lr=learning_rate)
 
-## RESULT: SGD sucks for our case! but it will fill up the Powerpoint slides ##
-
+## RESULT: I needed to change the learning rate! I did not think it was such 
+#   a big deal ... but it was! so SGD works great!
+ 
 counter = 0;
 
 ### TRAIN ###
@@ -188,7 +197,9 @@ for epoch in range(num_epochs):
         # this is a step purely for printing out the steps
         if (i) % 322 == 0:                              
             # need to fix my math here... HELP!!!
-            print('Epoch [%d/%d], Step [%d/%d], Loss: %.4f'
+#            print('Epoch [%d/%d], Step [%d/%d], Loss: %.4f'
+#                 %(epoch+1, num_epochs, i + 1, len(train_dataset)//batch_size, loss.data))
+             print('Epoch [%d/%d], Step [%d/%d], Loss: %.4f'
                  %(epoch+1, num_epochs, i + 1, len(train_dataset)//batch_size, loss.data))
         
 
@@ -208,14 +219,14 @@ for dat in train_loader:
     outputs = net(dat)
     
     # choose the best class from the output --> The class with the best score
-    _, predicted = torch.max(outputs.data, 1)
+    _, predicted1 = torch.max(outputs.data, 1)
     # += the total count
     total += labels.size(0) 
     # += the total corrects!                 
-    correct += (predicted == labels).sum()     # Increment the correct count
+    correct += (predicted1 == labels).sum()     # Increment the correct count
     
 print('Accuracy of the network on the training data: %d %%' % (100 * correct / total))
-print("THIS ^^^ SHOULD BE 100%")
+#print("THIS ^^^ SHOULD BE 100%")
                         
 #### the real testing step ####
         
@@ -229,12 +240,12 @@ for dat in test_loader:
      # choose the best class from the output --> The class with the best score
     _, predicted = torch.max(outputs.data, 1)  
      # += the total count
-    total += labels.size(0)  
+    total += labels2.size(0)  
      # += the total corrects!                     
     correct += (predicted == labels2).sum()     
 
 print('Accuracy of the network on the test data: %d %%' % (100 * correct / total))
-print("THIS ^^^ SHOULD NOT BE 100% (unless I'm a god)")
+#print("THIS ^^^ SHOULD NOT BE 100% (unless I'm a god)")
 
 
 

@@ -27,6 +27,12 @@ import warnings
 warnings.filterwarnings("ignore")
 
 
+
+torch.manual_seed(0);
+device = 'cuda' if torch.cuda.is_available() else 'cpu';
+
+
+
 ## Simple feed forward NN ##
 class Net(nn.Module):
     
@@ -141,12 +147,12 @@ hidden_size6 = 25;
 num_classes = 2       
 
 # an epoch is "the number of times entire dataset is trained"
-num_epochs = 6
+num_epochs = 30
 # the chuck of the input data we took for one iter
 batch_size = 100    
 
 # self adjusting alpha for the SGD or ADAM towards the end
-learning_rate = 0.001
+learning_rate = 0.2
 
 ## ^^ this is something neat to fuck around with ^^ ##
 
@@ -186,7 +192,7 @@ net = Net(input_size, hidden_size, num_classes,hidden_size2,hidden_size3,\
 # loss function
 criterion = nn.CrossEntropyLoss()
 
-optimizer = torch.optim.Adam(net.parameters(), lr=learning_rate)
+optimizer = torch.optim.SGD(net.parameters(), lr=learning_rate)
 
 # just for the fuck of it let's try it with SGD
 #optimizer = torch.optim.SGD(net.parameters(), lr=learning_rate)
@@ -240,11 +246,11 @@ for dat in train_loader:
     outputs = net(dat)
     
     # choose the best class from the output --> The class with the best score
-    _, predicted = torch.max(outputs.data, 1)
+    _, predicted1 = torch.max(outputs.data, 1)
     # += the total count
     total += labels.size(0) 
     # += the total corrects!                 
-    correct += (predicted == labels).sum()     # Increment the correct count
+    correct += (predicted1 == labels).sum()     # Increment the correct count
     
 print('Accuracy of the network on the training data: %d %%' % (100 * correct / total))
 print("THIS ^^^ SHOULD BE 100%")
